@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact name="DNP3_Outstation:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/DNP3_Outstation_jar</output-path>
+    <root id="root">
+      <element id="archive" name="DNP3_Outstation.jar">
+        <element id="module-output" name="DNP3_Outstation" />
+      </element>
+      <element id="library" level="project" name="opendnp3-bindings-3.1.2" />
+      <element id="library" level="project" name="libs" />
+    </root>
+  </artifact>
+</component>
