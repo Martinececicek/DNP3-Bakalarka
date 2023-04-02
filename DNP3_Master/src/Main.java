@@ -119,8 +119,8 @@ public class Main {
         // do an integrity scan every 2 seconds
         byte variatinons = 3;
         byte group = 30;
-        master1.addPeriodicScan(Duration.ofSeconds(10),Header.allObjects(group,variatinons),PrintingSOEHandler.getInstance());
-        //master1.addPeriodicScan(Duration.ofSeconds(2), Header.getIntegrity(), PrintingSOEHandler.getInstance());
+        //master1.addPeriodicScan(Duration.ofSeconds(10),Header.allObjects(group,variatinons),PrintingSOEHandler.getInstance());
+        master1.addPeriodicScan(Duration.ofSeconds(10), Header.getIntegrity(), PrintingSOEHandler.getInstance());
         master1.enable();
 
         // all this cruft just to read a line of text in Java. Oh the humanity.
