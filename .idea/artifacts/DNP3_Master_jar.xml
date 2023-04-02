@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="DNP3_Master:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/DNP3_Master_jar</output-path>
+    <root id="archive" name="DNP3_Master.jar">
+      <element id="module-output" name="DNP3_Master" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/opendnp3-bindings-3.1.2.jar" path-in-jar="/" />
+      <element id="library" level="project" name="opendnp3-bindings-3.1.2" />
+    </root>
+  </artifact>
+</component>
