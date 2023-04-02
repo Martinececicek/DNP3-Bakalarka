@@ -129,14 +129,21 @@ public class Main {
                 new IPEndpoint(MasterIP, port),
                 PrintingChannelListener.getInstance()
         );
+
+        //DatabaseConfig.allValues()    promenna
+        int databasenum = 5;
+        //EventBufferConfig.allTypes()  promenna
+        int eventbufferconfignum = 5;
         // Create the default outstation configuration
-        OutstationStackConfig config = new OutstationStackConfig(DatabaseConfig.allValues(2), EventBufferConfig.allTypes(50));
+        OutstationStackConfig config = new OutstationStackConfig(DatabaseConfig.allValues(databasenum), EventBufferConfig.allTypes(eventbufferconfignum));
+
 
         config.linkConfig.localAddr = 10;
         config.linkConfig.remoteAddr = 1;
 
-        config.outstationConfig.allowUnsolicited = true; //Povoli unsolicited zpravy
-        //config.outstationConfig.
+
+
+
 
         //Add new outstation to the channel
         Outstation outstation = channel.addOutstation(
@@ -150,39 +157,99 @@ public class Main {
         outstation.enable();
 
 
-        double cislo = 10;
-        OutstationChangeSet set = new OutstationChangeSet();
-
-
         // all this stuff just to read a line of text in Java. Oh the humanity.
         String line = "";
         InputStreamReader converter = new InputStreamReader(System.in);
         BufferedReader in = new BufferedReader(converter);
 
+        //INICIALIZACE PROMENNYCH PRO JEDNOTLIVE RESPONSES
+        double analognumber = 0;
+        boolean binaryinput = false;
+        long counter = 0;
+
+        OutstationChangeSet set = new OutstationChangeSet(); //inicializace Outstation set
+        Flags flags = new Flags(); //inicializace Flags
+
+        DNPTime dnpTime = new DNPTime(System.currentTimeMillis(),TimestampQuality.SYNCHRONIZED);
 
         int i = 34;
         while (true) {
-            System.out.println("Enter something to update a counter or type <quit> to exit");
+            System.out.println("Enter something to update any value");
             line = in.readLine();
-            if(line.equals("quit")) {
-                break;
-            }else if(line.equals("1")){
+            switch(line) {
 
-                cislo++;
-                Flags flags = new Flags();
-                flags.set(AnalogQuality.ONLINE);
-                set.update(new AnalogInput(cislo,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.UNSYNCHRONIZED)),0);
-                outstation.apply(set);
+                case "1": //ANALOG INPUT CHANGE
+                    analognumber++;
+                    flags.set(AnalogQuality.ONLINE);
+                    set.update(new AnalogInput(analognumber, flags, dnpTime), 0);
+                    set.update(new AnalogInput((analognumber - 3 * 14 / 3), flags, dnpTime), 1);
+                    outstation.apply(set);
+                    break;
 
-/*
-                set.update(new AnalogInput(cislo,flags,new DNPTime(System.currentTimeMillis())),0);
-                //flags.set(CounterQuality.COMM_LOST);
-                //set.update(new Counter(i, flags, new DNPTime(0)), 0);
-                outstation.apply(set);
-                ++i;*/
+                case "2": //BINARY INPUT CHANGE
+                    if (binaryinput == false){
+                        binaryinput = true;
+                    flags.set(BinaryQuality.ONLINE);
+                    set.update(new BinaryInput(binaryinput, flags, new DNPTime(System.currentTimeMillis(), TimestampQuality.SYNCHRONIZED)), 0);
+                    outstation.apply(set);
+                    }else if(binaryinput == true){
+                        binaryinput = false;
+                        flags.set(BinaryQuality.ONLINE);
+                        set.update(new BinaryInput(binaryinput, flags, new DNPTime(System.currentTimeMillis(), TimestampQuality.SYNCHRONIZED)), 0);
+                        outstation.apply(set);
+                        //BinaryInput binaryInput = new BinaryInput(binaryinput,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.SYNCHRONIZED));
+                        //out.println(binaryInput.toString());
+                    }
+                    break;
+
+                case "3": // DOUBLE BIT BINARY INPUT
+                    flags.set(DoubleBitBinaryQuality.LOCAL_FORCED);
+                    set.update(new DoubleBitBinaryInput(DoubleBit.DETERMINED_ON, flags, new DNPTime(System.currentTimeMillis(), TimestampQuality.INVALID)), 0);
+                    set.update(new DoubleBitBinaryInput(DoubleBit.DETERMINED_OFF, flags, new DNPTime(System.currentTimeMillis(), TimestampQuality.INVALID)), 1);
+                    flags.set(DoubleBitBinaryQuality.RESTART);
+                    set.update(new DoubleBitBinaryInput(DoubleBit.INDETERMINATE,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.SYNCHRONIZED)),2);
+                    set.update(new DoubleBitBinaryInput(DoubleBit.INTERMEDIATE,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.SYNCHRONIZED)),3);
+                    outstation.apply(set);
+                    break;
+
+                case "4": //COUNTER CHANGE
+                        flags.set(CounterQuality.RESTART);
+                    for (int y = 0; y <= databasenum; y++) { // HODNE JEDNODUCHY COUNTER :)
+                        set.update(new Counter(counter,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.UNSYNCHRONIZED)),y);
+
+                        counter++;
+                    }
+                    outstation.apply(set);
+                    break;
+
+                case "5": //FROZEN COUNTER CHANGE
+
+                    //TODO
+
+                case "6": //BINARY OUTPUT STATUS CHANGE
+
+                    break;
+
+                case "7": //ANALOG OUTPUT STATUS CHANGE
+
+                    break;
+
+                case "s": //Zkouska vypinat zapinat Solicited/Unsolicited messages /// JEDNODUCHY PREPINAC
+                    if (config.outstationConfig.allowUnsolicited) {
+                        config.outstationConfig.allowUnsolicited = false;   //Zakaze unsolicited zpravy
+                    }else {
+                        config.outstationConfig.allowUnsolicited = true;    //Povoli unsolicited zpravy
+                    }
+                    break;
+
+                default:
+                    break;
             }
         }
     }
 }
 
-// -ip 127.0.0.1 -port 20000 -run
+/*
+-ip 127.0.0.1 -port 20000 -run
+
+ */
