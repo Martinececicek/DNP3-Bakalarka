@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="opendnp3-bindings-3.1.2">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/libs/opendnp3-bindings-3.1.2.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
