@@ -216,7 +216,6 @@ public class Main {
                         flags.set(CounterQuality.RESTART);
                     for (int y = 0; y <= databasenum; y++) { // HODNE JEDNODUCHY COUNTER :)
                         set.update(new Counter(counter,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.UNSYNCHRONIZED)),y);
-
                         counter++;
                     }
                     outstation.apply(set);

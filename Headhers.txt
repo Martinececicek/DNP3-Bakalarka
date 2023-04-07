@@ -1,0 +1,27 @@
+OUTSTATION
+
+
+Binary Input
+	True
+	False
+
+
+Double Bit Binary Input
+	Determined_ON	(Urceno ON/OFF)
+	Determined_OFF
+	Indeterminate	(Neurcito)
+	Intermediate	(Pokrocili)
+	Restart		(Restart)
+
+Analog
+	Double
+
+Counter
+	Long
+
+Frozen Counter
+	
+
+Binary Output Status
+
+Analog Output Status

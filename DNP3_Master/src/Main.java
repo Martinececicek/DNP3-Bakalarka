@@ -109,6 +109,8 @@ public class Main {
 
 
         MasterStackConfig config1 = new MasterStackConfig();
+        MasterConfig masterConfig = new MasterConfig();
+        config1.master.timeSyncMode = TimeSyncMode.LAN;
         config1.link.localAddr = 1;
         config1.link.remoteAddr = 10;
 
@@ -128,6 +130,8 @@ public class Main {
         // all this cruft just to read a line of text in Java. Oh the humanity.
         InputStreamReader converter = new InputStreamReader(in);
         BufferedReader in = new BufferedReader(converter);
+
+
 
         out.println("Ahoj");
 
@@ -157,7 +161,9 @@ public class Main {
                     break;
                 case ("scan"):
                     //master1.scan(Header.allObjects((byte)30, (byte)1));
-                    master1.scan(Header.getEventClasses(), PrintingSOEHandler.getInstance());
+                    //master1.scan(Header.getEventClasses(), PrintingSOEHandler.getInstance());
+                    master1.scan(Header.Range16(group,variatinons,0,4),PrintingSOEHandler.getInstance());
+                    //out.println(Header.getEventClasses().toString());
                     break;
                 default:
                     out.println("Unknown command: " + line);
