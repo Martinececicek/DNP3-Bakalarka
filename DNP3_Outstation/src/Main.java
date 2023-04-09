@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.concurrent.RejectedExecutionHandler;
 
 import static java.lang.System.in;
 import static java.lang.System.out;
@@ -46,11 +47,13 @@ public class Main {
     private static String MasterIP;
     private static int port;
     private boolean onStart = true;
+    private static boolean unsolicited = false;
     public static void main(String[] args) throws Exception {
 
         String line = null;
         String splitedLine[] = null;
         boolean onStart = true;
+
 
         InputStreamReader converter = new InputStreamReader(in);
         BufferedReader in = new BufferedReader(converter);
@@ -93,6 +96,13 @@ public class Main {
                         }
                         break;
                     }
+                    case ("-soli"):{
+                        if (splitedLine[i+1]=="on"){
+                            unsolicited = true;
+                        }else
+                            unsolicited = false;
+                        break;
+                    }
                     case ("-help"):
                         out.println("-ip <IP>-> sets the ip of Master station to connect");
                         out.println("-port <port> -> sets the port");
@@ -118,7 +128,6 @@ public class Main {
     }
 
 
-
     private static void run(DNP3Manager manager, String masterIP,int port) throws Exception {
 
         // Create a tcp channel class that will connect to the loopback
@@ -137,11 +146,15 @@ public class Main {
         // Create the default outstation configuration
         OutstationStackConfig config = new OutstationStackConfig(DatabaseConfig.allValues(databasenum), EventBufferConfig.allTypes(eventbufferconfignum));
 
+        //turn on unsolicited responses
+        config.outstationConfig.allowUnsolicited = true;
+
+
+
 
         config.linkConfig.localAddr = 10;
         config.linkConfig.remoteAddr = 1;
-
-
+        config.eventBufferConfig.maxAnalogEvents = 2;
 
 
 
@@ -164,12 +177,14 @@ public class Main {
 
         //INICIALIZACE PROMENNYCH PRO JEDNOTLIVE RESPONSES
         double analognumber = 0;
+        double analogoutputstatus = 50;
         boolean binaryinput = false;
         long counter = 0;
+        long frozencounter = 0;
+        boolean binaryoutputstatus = false;
 
         OutstationChangeSet set = new OutstationChangeSet(); //inicializace Outstation set
         Flags flags = new Flags(); //inicializace Flags
-
         DNPTime dnpTime = new DNPTime(System.currentTimeMillis(),TimestampQuality.SYNCHRONIZED);
 
         int i = 34;
@@ -190,7 +205,7 @@ public class Main {
                     if (binaryinput == false){
                         binaryinput = true;
                     flags.set(BinaryQuality.ONLINE);
-                    set.update(new BinaryInput(binaryinput, flags, new DNPTime(System.currentTimeMillis(), TimestampQuality.SYNCHRONIZED)), 0);
+                    set.update(new BinaryInput(binaryinput, flags,new DNPTime(0)), 0);
                     outstation.apply(set);
                     }else if(binaryinput == true){
                         binaryinput = false;
@@ -214,7 +229,7 @@ public class Main {
 
                 case "4": //COUNTER CHANGE
                         flags.set(CounterQuality.RESTART);
-                    for (int y = 0; y <= databasenum; y++) { // HODNE JEDNODUCHY COUNTER :)
+                    for (int y = 0; y <= databasenum; y++) {
                         set.update(new Counter(counter,flags,new DNPTime(System.currentTimeMillis(),TimestampQuality.UNSYNCHRONIZED)),y);
                         counter++;
                     }
@@ -222,24 +237,61 @@ public class Main {
                     break;
 
                 case "5": //FROZEN COUNTER CHANGE
-
+                        flags.set(FrozenCounterQuality.ONLINE);
+                        set.freezeCounter(1,false,EventMode.Force);
+                        outstation.apply(set);
+                        break;
                     //TODO
 
                 case "6": //BINARY OUTPUT STATUS CHANGE
+                        flags.set(BinaryOutputStatusQuality.ONLINE);
+                        binaryoutputstatus = true;
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0);
+                        flags.set(BinaryOutputStatusQuality.RESTART);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),1);
+                        flags.set(BinaryOutputStatusQuality.COMM_LOST);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),2);
+                        flags.set(BinaryOutputStatusQuality.REMOTE_FORCED);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),3);
+                        flags.set(BinaryOutputStatusQuality.LOCAL_FORCED);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),4);
+                        flags.set(BinaryOutputStatusQuality.RESERVED1);
+                        outstation.apply(set);
+                        /*
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),5);
+                        flags.set(BinaryOutputStatusQuality.RESERVED2);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),6);
+                        flags.set(BinaryOutputStatusQuality.STATE);
+                        outstation.apply(set);
+                        set.update(new BinaryOutputStatus(binaryoutputstatus,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),7);
+                        outstation.apply(set);
 
+                         */
                     break;
 
                 case "7": //ANALOG OUTPUT STATUS CHANGE
-
+                        flags.set(AnalogOutputStatusQuality.ONLINE);
+                        set.update(new AnalogOutputStatus(analogoutputstatus*50,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0,EventMode.Force);
+                        outstation.apply(set);
+                        flags.set(AnalogOutputStatusQuality.REMOTE_FORCED);
+                        set.update(new AnalogOutputStatus(analogoutputstatus*150,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0,EventMode.EventOnly);
+                        outstation.apply(set);
+                        flags.set(AnalogOutputStatusQuality.LOCAL_FORCED);
+                        set.update(new AnalogOutputStatus(analogoutputstatus*365,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0,EventMode.Detect);
+                        outstation.apply(set);
+                        flags.set(AnalogOutputStatusQuality.RESTART);
+                        set.update(new AnalogOutputStatus(analogoutputstatus*41,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0,EventMode.Suppress);
+                        outstation.apply(set);
+                        flags.set(AnalogOutputStatusQuality.OVERRANGE);
+                        set.update(new AnalogOutputStatus(analogoutputstatus*74,flags,new DNPTime(0,TimestampQuality.SYNCHRONIZED)),0,EventMode.Force);
+                        outstation.apply(set);
                     break;
 
-                case "s": //Zkouska vypinat zapinat Solicited/Unsolicited messages /// JEDNODUCHY PREPINAC
-                    if (config.outstationConfig.allowUnsolicited) {
-                        config.outstationConfig.allowUnsolicited = false;   //Zakaze unsolicited zpravy
-                    }else {
-                        config.outstationConfig.allowUnsolicited = true;    //Povoli unsolicited zpravy
-                    }
-                    break;
 
                 default:
                     break;
